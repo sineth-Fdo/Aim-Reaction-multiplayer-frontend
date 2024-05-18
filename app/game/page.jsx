@@ -75,7 +75,8 @@ const Page = () => {
   // }, [stop]);
 
   useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    // const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    const socketUrl = "http://localhost:3001/home";
     const newSocket = io(socketUrl);
   
     newSocket.on("yourID", (id) => {
