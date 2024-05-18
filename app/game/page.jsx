@@ -46,7 +46,9 @@ const Page = () => {
 
   const joinRoom = () => {
     console.log("Hello");
+    if (socket) { 
       socket.emit("join_room", room);
+    }
   };
 
   useEffect(() => {
@@ -75,21 +77,19 @@ const Page = () => {
   useEffect(() => {
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     const newSocket = io(socketUrl);
-
+  
     newSocket.on("yourID", (id) => {
       console.log(id);
       setMyId(id);
-
-      
+    });
+  
     newSocket.on("receive_message", (data) => {
       console.log(data);
       setDisplay(data);
     });
-
-    });
-
   
-
+    setSocket(newSocket); 
+  
     return () => {
       newSocket.disconnect();
     };
