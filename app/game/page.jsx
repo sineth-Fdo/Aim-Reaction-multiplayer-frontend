@@ -16,11 +16,16 @@ const Page = () => {
   const [myId, setMyId] = useState("");
   const [room, setRoom] = useState("");
   const [display, setDisplay] = useState({});
+  const [roomCount, setRoomCount] = useState(0);
+  const [winCount, setWinCount] = useState(0);
+  const [winId, setWinId] = useState("");
 
   const messageData = {
+    id: myId,
     room: room,
     message: count + 1,
   };
+
 
 
   const moveClick = () => {
@@ -35,19 +40,31 @@ const Page = () => {
       return newCount;
     });
     socket.emit("send_message", messageData, room);
-    if (count === 50) {
+    if (count === 5) {
       setStop(false);
       setCount(0);
       setTimer(0);
-      alert(`You clicked ${count} times in ${timer} seconds`);
+      alert(`You clicked ${count+1} times in ${timer} seconds`);
+      setWinCount(winCount + 1);
+
+      //send message to who's won
+      socket.emit("win_message", {
+        id: myId,
+        message: `You clicked ${count+1} times in ${timer} seconds`,
+      }, room);
+      setStop(false);
+      setWinId(myId);
+
+  
+      
     }
     console.log('click');
   }
 
   const joinRoom = () => {
-    console.log("Hello");
     if (socket) { 
       socket.emit("join_room", room);
+      socket.emit("get-room-count", room);
     }
   };
 
@@ -61,43 +78,49 @@ const Page = () => {
     }
   }, [stop]);
 
-  // useEffect(() => {
-  //   if (stop === true) {
-  //     const timeout = setTimeout(() => {
-  //       alert(`You have got ${countRef.current} kills`);
-  //       setStop(false);
-  //       setCount(0);
-  //       setTimer(0);
-  //     }, 10000);
 
-  //     return () => clearTimeout(timeout); 
-  //   }
-  // }, [stop]);
+useEffect(() => {
+  const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+  const newSocket = io(socketUrl);
 
-  useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
-    const newSocket = io(socketUrl);
-  
-    newSocket.on("yourID", (id) => {
-      console.log(id);
-      setMyId(id);
-    });
-  
-    newSocket.on("receive_message", (data) => {
-      console.log(data);
-      setDisplay(data);
-    });
-  
-    setSocket(newSocket); 
-  
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
+  newSocket.on("receive_win", (data) => {
+    alert("hello "+data.id)
+    if (data.id !== myId) { 
+      setWinId(data.id);
+    }
+  });
+
+
+  newSocket.on("yourID", (id) => {
+    console.log(id);
+    setMyId(id);
+  });
+
+  newSocket.on("receive_message", (data) => {
+    setDisplay(prevDisplay => ({
+      ...prevDisplay,
+      [data.id]: data.message,
+    }));
+  });
+
+  newSocket.on("room-count", (count) => {
+    console.log(`Room ${room} has ${count} users`);
+    setRoomCount(count);
+  });
+
+
+  setSocket(newSocket); 
+
+  return () => {
+    newSocket.disconnect();
+  };
+}, []);
 
 
   return (
     <div className='bg-[#1b2734] w-screen h-[100vh] flex justify-center items-center flex-col'>
+
+
       <div className="border w-[80%] mb-10  flex items-center relative">
         <div className="bg-[red] w-[40px] h-[40px] absolute transition-all duration-1000" 
           style={{ 
@@ -105,13 +128,31 @@ const Page = () => {
           }}
         ></div>
       </div>
-      <div className="border w-[80%] mb-10  flex items-center relative">
-        <div className="bg-[green] w-[40px] h-[40px] absolute transition-all duration-1000" 
-          style={{ 
-            left: `${display.message * 2}%`, 
-          }}
-        ></div>
-      </div>
+        
+      {
+        Object.entries(display).map(([id, message]) => (
+          
+        
+            <div key={id} className="border w-[80%] mb-10  flex items-center relative">
+            <div className=" w-[40px] h-[40px] absolute transition-all duration-1000" 
+              style={{ 
+                left: `${message * 2}%`, 
+                backgroundColor: id === myId ? 'red' : 'blue'
+                                  && message < 10 ? 'yellow' : 'blue'
+                                  && message < 20 ? 'purple' : 'yellow'
+                                  && message < 30 ? 'orange' : 'purple'
+                                  && message < 40 ? 'pink' : 'orange'
+                                  && message < 50 ? 'green' : 'green'
+              }}
+            >{message}</div>
+          </div>
+          
+        ))  
+      }
+    
+
+
+  
         {
           start == false ?
           <div className='border w-[80%] h-[80vh] relative flex justify-center items-center flex-col'>
@@ -157,6 +198,9 @@ const Page = () => {
       <h1 className="text-[#fff]">
         COUNT : {count}
       </h1>
+      <h1 className="text-[#fff]">
+        ROOM COUNT : {roomCount}
+      </h1>
       <h2 className="text-[#fff]">
         TIMER : {timer}
       </h2>
@@ -171,6 +215,32 @@ const Page = () => {
         }}
         
       />
+
+      {
+          winId &&  (
+            <div className="border w-[100%] h-[60vh] bg-[green] absolute z-4 flex justify-center items-center flex-col">
+            <h1 className="text-[#fff] text-5xl">
+              {
+                winId == myId ? "You Won" : "You Lost"
+              }
+            </h1>
+            <br /><br />
+            <h1 className="text-[#ffffff5f]">
+              {winId} has won
+            </h1>
+            <br />
+            <button 
+              className="border border-[#fff] p-2 rounded-md text-[#fff] h-[30px] w-[100px] flex justify-center items-center mb-4 hover:bg-[#fff] hover:text-[#000] transition-all duration-300 ease-in-out"
+              onClick={() => setWinId("")}
+              >
+              Back
+            </button>
+    
+       
+         </div>
+          ) 
+      }
+
     </div>
   );
 }
