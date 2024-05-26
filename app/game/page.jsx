@@ -19,6 +19,8 @@ const Page = () => {
   const [roomCount, setRoomCount] = useState(0);
   const [winCount, setWinCount] = useState(0);
   const [winId, setWinId] = useState("");
+  const [winName,setWinName] = useState("");
+  const [userName, setUserName] = useState("Sineth");
 
   const messageData = {
     id: myId,
@@ -40,10 +42,20 @@ const Page = () => {
       return newCount;
     });
     socket.emit("send_message", messageData, room);
-    if (count === 5) {
+    if (count === 10) {
       setStop(false);
-      setCount(0);
-      setTimer(0);
+      setCount(
+        preCount => {
+          const newCount = preCount;
+          return newCount;
+        }
+      );
+      setTimer(
+        preTimer => {
+          const newTimer = preTimer;
+          return newTimer;
+        }
+      );
       alert(`You clicked ${count+1} times in ${timer} seconds`);
       setWinCount(winCount + 1);
 
@@ -51,6 +63,7 @@ const Page = () => {
       socket.emit("win_message", {
         id: myId,
         message: `You clicked ${count+1} times in ${timer} seconds`,
+        userName: userName,
       }, room);
       setStop(false);
       setWinId(myId);
@@ -84,9 +97,9 @@ useEffect(() => {
   const newSocket = io(socketUrl);
 
   newSocket.on("receive_win", (data) => {
-    alert("hello "+data.id)
     if (data.id !== myId) { 
       setWinId(data.id);
+      setWinName(data.userName)
     }
   });
 
@@ -120,42 +133,9 @@ useEffect(() => {
   return (
     <div className='bg-[#1b2734] w-screen h-[100vh] flex justify-center items-center flex-col'>
 
-
-      <div className="border w-[80%] mb-10  flex items-center relative">
-        <div className="bg-[red] w-[40px] h-[40px] absolute transition-all duration-1000" 
-          style={{ 
-            left: `${count * 2}%`, 
-          }}
-        ></div>
-      </div>
-        
-      {
-        Object.entries(display).map(([id, message]) => (
-          
-        
-            <div key={id} className="border w-[80%] mb-10  flex items-center relative">
-            <div className=" w-[40px] h-[40px] absolute transition-all duration-1000" 
-              style={{ 
-                left: `${message * 2}%`, 
-                backgroundColor: id === myId ? 'red' : 'blue'
-                                  && message < 10 ? 'yellow' : 'blue'
-                                  && message < 20 ? 'purple' : 'yellow'
-                                  && message < 30 ? 'orange' : 'purple'
-                                  && message < 40 ? 'pink' : 'orange'
-                                  && message < 50 ? 'green' : 'green'
-              }}
-            >{message}</div>
-          </div>
-          
-        ))  
-      }
-    
-
-
-  
         {
           start == false ?
-          <div className='border w-[80%] h-[80vh] relative flex justify-center items-center flex-col'>
+          <div className='border w-[80%] h-screen relative flex justify-center items-center flex-col'>
             
             <button
               className='border border-[#fff] p-2 rounded-md text-[#fff] h-[100px] w-[200px] mb-4 hover:bg-[#fff] hover:text-[#000] transition-all duration-300 ease-in-out' 
@@ -193,6 +173,37 @@ useEffect(() => {
                 />
               </div>
         }
+        <br /><br />
+
+      <div className="border w-[80%] mb-10  flex items-center relative">
+        <div className="bg-[red] w-[15px] h-[15px] absolute transition-all duration-1000" 
+          style={{ 
+            left: `${count * 2}%`, 
+          }}
+        ></div>
+      </div>
+      {
+        Object.entries(display).map(([id, message]) => (
+          
+        
+            <div key={id} className="border w-[80%] mb-10  flex items-center relative">
+            <div className=" w-[20px] h-[20px] absolute transition-all duration-1000" 
+              style={{ 
+                left: `${message * 2}%`, 
+                backgroundColor: id === myId ? 'red' : 'blue'
+                                  && message < 10 ? 'yellow' : 'blue'
+                                  && message < 20 ? 'purple' : 'yellow'
+                                  && message < 30 ? 'orange' : 'purple'
+                                  && message < 40 ? 'pink' : 'orange'
+                                  && message < 50 ? 'green' : 'green'
+              }}
+            >{message}</div>
+          </div>
+          
+        ))  
+      }
+    
+
 
 
       <h1 className="text-[#fff]">
@@ -216,6 +227,8 @@ useEffect(() => {
         
       />
 
+
+
       {
           winId &&  (
             <div className="border w-[100%] h-[60vh] bg-[green] absolute z-4 flex justify-center items-center flex-col">
@@ -226,7 +239,7 @@ useEffect(() => {
             </h1>
             <br /><br />
             <h1 className="text-[#ffffff5f]">
-              {winId} has won
+              {winId} {winName} has won the game
             </h1>
             <br />
             <button 
