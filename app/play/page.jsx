@@ -113,7 +113,8 @@ useEffect(() => {
 }, [stop]);
 
 useEffect(() => {
-  const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+  // const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+  const socketUrl = 'https://aim-reaction-server.onrender.com/home';
   const newSocket = io(socketUrl);
 
   newSocket.on("receive_win", (data) => {
