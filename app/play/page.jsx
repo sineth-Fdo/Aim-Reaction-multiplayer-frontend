@@ -140,9 +140,46 @@ const Page = () => {
   useEffect(() => {
     return () => {
       clearInterval(intervalId.current);
-      clearInterval(countdownId.current);
+    }
+  }, [stop]);
+
+  useEffect(() => {
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    const newSocket = io(socketUrl);
+
+    newSocket.on("receive_win", (data) => {
+      if (data.id !== myId) { 
+        setWinId(data.id);
+        setWinName(data.userName)
+      }
+    });
+
+
+    newSocket.on("yourID", (id) => {
+      console.log(id);
+      setMyId(id);
+    });
+
+    newSocket.on("receive_message", (data) => {
+      setDisplay(prevDisplay => ({
+        ...prevDisplay,
+        [data.id]: data.message,
+      }));
+    });
+
+    newSocket.on("room-count", (count) => {
+      console.log(`Room ${room} has ${count} users`);
+      setRoomCount(count);
+    });
+
+
+    setSocket(newSocket); 
+
+    return () => {
+      newSocket.disconnect();
     };
   }, []);
+
 
   return (
     <div className="w-[100%] h-[100vh] bg-[#1b2734] flex flex-col items-center">
